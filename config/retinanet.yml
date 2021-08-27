@@ -1,0 +1,6 @@
+type: 'retinanet'
+train:
+  train_file_pattern: "dataset/train.record"
+eval:
+  eval_file_pattern: "dataset/test.record"
+  #val_json_file: <path to the validation annotation JSON file>
