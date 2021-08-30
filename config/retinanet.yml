@@ -1,11 +1,21 @@
 type: 'retinanet'
 train:
   train_file_pattern: "dataset/train.record"
-  total_steps: 1
+  total_steps: 50000
   batch_size: 1
 eval:
   eval_file_pattern: "dataset/test.record"
   batch_size: 1
+architecture:
+  num_classes: 37
   #val_json_file: <path to the validation annotation JSON file>
-#predict:
-  #predict_batch_size: 2
+predict:
+  batch_size: 1
+resnet:
+  resnet_depth: 20  #default: 50
+retinanet_head:
+  num_convs: 3 #default: 4
+  num_filters: 32 #default: 256
+  use_separable_conv: False #default: False
+retinanet_parser:
+  output_size: [120, 120]  #default: [640, 640]
