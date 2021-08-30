@@ -1,0 +1,110 @@
+anchor:
+  anchor_size: 4.0
+  aspect_ratios: [1.0, 2.0, 0.5]
+  num_scales: 3
+architecture:
+  backbone: resnet
+  max_level: 7
+  min_level: 3
+  multilevel_features: fpn
+  num_classes: 37
+  parser: retinanet_parser
+  use_bfloat16: false
+enable_summary: true
+eval:
+  batch_size: 10
+  eval_dataset_type: tfrecord
+  eval_file_pattern: dataset/test.record
+  eval_samples: 5000
+  eval_timeout: null
+  input_sharding: true
+  min_eval_interval: 180
+  num_images_to_visualize: 0
+  num_steps_per_eval: 1000
+  type: box
+  use_json_file: true
+  val_json_file: ''
+fpn:
+  fpn_feat_dims: 256
+  use_batch_norm: true
+  use_separable_conv: false
+isolate_session_state: false
+model_dir: model
+norm_activation:
+  activation: relu
+  batch_norm_epsilon: 0.0001
+  batch_norm_momentum: 0.997
+  batch_norm_trainable: true
+  use_sync_bn: false
+postprocess:
+  max_total_size: 100
+  nms_iou_threshold: 0.5
+  pre_nms_num_boxes: 5000
+  score_threshold: 0.05
+  use_batched_nms: false
+predict:
+  batch_size: 10
+resnet:
+  resnet_depth: 18
+retinanet_head:
+  num_convs: 3
+  num_filters: 32
+  use_separable_conv: false
+retinanet_loss:
+  box_loss_weight: 50
+  focal_loss_alpha: 0.25
+  focal_loss_gamma: 1.5
+  huber_loss_delta: 0.1
+retinanet_parser:
+  aug_rand_hflip: true
+  aug_scale_max: 1.0
+  aug_scale_min: 1.0
+  autoaugment_policy_name: v0
+  match_threshold: 0.5
+  max_num_instances: 100
+  num_channels: 3
+  output_size: [120, 120]
+  skip_crowd_during_training: true
+  unmatched_threshold: 0.5
+  use_autoaugment: false
+spinenet:
+  model_id: '49'
+strategy_config:
+  all_reduce_alg: null
+  distribution_strategy: one_device
+  num_gpus: 1
+  num_packs: 1
+  task_index: -1
+  tpu: null
+  worker_hosts: null
+strategy_type: one_device
+train:
+  batch_size: 10
+  checkpoint:
+    path: ''
+    prefix: ''
+  frozen_variable_prefix: ''
+  gradient_clip_norm: 0.0
+  input_partition_dims: null
+  input_sharding: false
+  iterations_per_loop: 100
+  l2_weight_decay: 0.0001
+  learning_rate:
+    init_learning_rate: 0.08
+    learning_rate_levels: [0.008, 0.0008]
+    learning_rate_steps: [15000, 20000]
+    type: step
+    warmup_learning_rate: 0.0067
+    warmup_steps: 500
+  num_cores_per_replica: null
+  optimizer:
+    momentum: 0.9
+    nesterov: true
+    type: momentum
+  regularization_variable_regex: .*(kernel|weight):0$
+  total_steps: 50000
+  train_dataset_type: tfrecord
+  train_file_pattern: dataset/train.record
+  transpose_input: false
+type: retinanet
+use_tpu: false
