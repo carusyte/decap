@@ -16,6 +16,7 @@ from object_detection.utils import visualization_utils as viz_utils
 from object_detection.builders import model_builder
 
 model_dir = 'model/'
+pipeline_config = "config/retinanet.yml"
 
 label_map = label_map_util.load_labelmap('config/labelmap.pbtxt')
 categories = label_map_util.convert_label_map_to_categories(
@@ -26,7 +27,10 @@ category_index = label_map_util.create_category_index(categories)
 label_map_dict = label_map_util.get_label_map_dict(
     label_map, use_display_name=True)
 
-detection_model = model_builder.build(is_training=False)
+# Load pipeline config and build a detection model
+configs = config_util.get_configs_from_pipeline_file(pipeline_config)
+model_config = configs['model']
+detection_model = model_builder.build(model_config=None, is_training=False)
 # Restore checkpoint
 ckpt = tf.compat.v2.train.Checkpoint(
     model=detection_model)
