@@ -1,6 +1,8 @@
 type: 'retinanet'
 train:
   train_file_pattern: "dataset/train.record"
+  total_steps: 10
+  batch_size: 8
 eval:
   eval_file_pattern: "dataset/test.record"
   #val_json_file: <path to the validation annotation JSON file>
