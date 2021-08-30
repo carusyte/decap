@@ -7,5 +7,5 @@ eval:
   eval_file_pattern: "dataset/test.record"
   batch_size: 1
   #val_json_file: <path to the validation annotation JSON file>
-predict:
-  predict_batch_size: 2
+#predict:
+  #predict_batch_size: 2
