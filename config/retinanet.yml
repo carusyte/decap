@@ -12,7 +12,7 @@ architecture:
 predict:
   batch_size: 10
 resnet:
-  resnet_depth: 20  #default: 50
+  resnet_depth: 18  #default: 50
 retinanet_head:
   num_convs: 3 #default: 4
   num_filters: 32 #default: 256
