@@ -2,15 +2,15 @@ type: 'retinanet'
 train:
   train_file_pattern: "dataset/train.record"
   total_steps: 50000
-  batch_size: 1
+  batch_size: 10
 eval:
   eval_file_pattern: "dataset/test.record"
-  batch_size: 1
+  batch_size: 10
 architecture:
   num_classes: 37
   #val_json_file: <path to the validation annotation JSON file>
 predict:
-  batch_size: 1
+  batch_size: 10
 resnet:
   resnet_depth: 20  #default: 50
 retinanet_head:
