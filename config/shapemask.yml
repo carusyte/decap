@@ -1,0 +1,10 @@
+train:
+  train_file_pattern: "dataset/train.record"
+  total_steps: 50000
+  batch_size: 30
+eval:
+  eval_file_pattern: "dataset/test.record"
+  #val_json_file: <path to the validation annotation JSON file>
+  batch_size: 50
+shapemask_head:
+  #shape_prior_path: <path to shape priors>

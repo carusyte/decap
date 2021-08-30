@@ -6,3 +6,4 @@ object_detection==0.1
 pandas==1.3.2
 absl==0.0
 Pillow==8.3.1
+tf-models-official==2.6.0
