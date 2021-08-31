@@ -1,40 +1,14 @@
-import matplotlib
-import matplotlib.pyplot as plt
-
-import io
 import os
-import scipy.misc
+import pathlib
+
 import numpy as np
-from six import BytesIO
-from PIL import Image, ImageDraw, ImageFont
-
 import tensorflow as tf
+from PIL import Image
+from six import BytesIO
 
-from object_detection.utils import label_map_util
-from object_detection.utils import config_util
-from object_detection.utils import visualization_utils as viz_utils
-from object_detection.builders import model_builder
-
-model_dir = 'model/'
-pipeline_config = "config/retinanet.yml"
-
-label_map = label_map_util.load_labelmap('config/labelmap.pbtxt')
-categories = label_map_util.convert_label_map_to_categories(
-    label_map,
-    max_num_classes=label_map_util.get_max_label_map_index(label_map),
-    use_display_name=True)
-category_index = label_map_util.create_category_index(categories)
-label_map_dict = label_map_util.get_label_map_dict(
-    label_map, use_display_name=True)
-
-# Load pipeline config and build a detection model
-configs = config_util.get_configs_from_pipeline_file(pipeline_config)
-model_config = configs['model']
-detection_model = model_builder.build(model_config=None, is_training=False)
-# Restore checkpoint
-ckpt = tf.compat.v2.train.Checkpoint(
-    model=detection_model)
-ckpt.restore(os.path.join(model_dir, 'checkpoint')).expect_partial()
+saved_model = 'ssd_mobilenet_v2_fpnlite/model/saved/saved_model'
+image_dir = 'test_images'
+output_dir = 'detected_images'
 
 
 def load_image_into_numpy_array(path):
@@ -45,7 +19,7 @@ def load_image_into_numpy_array(path):
     (height, width, channels), where channels=3 for RGB.
 
     Args:
-      path: the file path to the image
+      path: a file path (this can be local or on colossus)
 
     Returns:
       uint8 numpy array with shape (img_height, img_width, 3)
@@ -57,58 +31,103 @@ def load_image_into_numpy_array(path):
         (im_height, im_width, 3)).astype(np.uint8)
 
 
-def get_model_detection_function(model):
-    """Get a tf.function for detection."""
+category_index = {
+    1: {'id': 1, 'name': 'A'},
+    2: {'id': 2, 'name': 'B'},
+    3: {'id': 3, 'name': 'C'},
+    4: {'id': 4, 'name': 'D'},
+    5: {'id': 5, 'name': 'E'},
+    6: {'id': 6, 'name': 'F'},
+    7: {'id': 7, 'name': 'G'},
+    8: {'id': 8, 'name': 'H'},
+    9: {'id': 9, 'name': 'I'},
+    10: {'id': 10, 'name': 'J'},
+    11: {'id': 11, 'name': 'K'},
+    12: {'id': 12, 'name': 'L'},
+    13: {'id': 13, 'name': 'M'},
+    14: {'id': 14, 'name': 'N'},
+    15: {'id': 15, 'name': 'O'},
+    16: {'id': 16, 'name': 'P'},
+    17: {'id': 17, 'name': 'Q'},
+    18: {'id': 18, 'name': 'R'},
+    19: {'id': 19, 'name': 'S'},
+    20: {'id': 20, 'name': 'T'},
+    21: {'id': 21, 'name': 'U'},
+    22: {'id': 22, 'name': 'V'},
+    23: {'id': 23, 'name': 'W'},
+    24: {'id': 24, 'name': 'X'},
+    25: {'id': 25, 'name': 'Y'},
+    26: {'id': 26, 'name': 'Z'},
+    27: {'id': 27, 'name': '0'},
+    28: {'id': 28, 'name': '1'},
+    29: {'id': 29, 'name': '2'},
+    30: {'id': 30, 'name': '3'},
+    31: {'id': 31, 'name': '4'},
+    32: {'id': 32, 'name': '5'},
+    33: {'id': 33, 'name': '6'},
+    34: {'id': 34, 'name': '7'},
+    35: {'id': 35, 'name': '8'},
+    36: {'id': 36, 'name': '9'},
+}
 
-    @tf.function
-    def detect_fn(image):
-        """Detect objects in image."""
+tf.keras.backend.clear_session()
+detect_fn = tf.saved_model.load(saved_model)
 
-        image, shapes = model.preprocess(image)
-        prediction_dict = model.predict(image, shapes)
-        detections = model.postprocess(prediction_dict, shapes)
+for filename in os.listdir(image_dir):
+    file_ext = pathlib.Path(filename).suffix
+    file_stem = pathlib.Path(filename).stem
+    if file_ext.lower() != ".jpg" and file_ext.lower() != ".png":
+        continue
+    image_path = os.path.join(image_dir, filename)
+    if not os.path.isfile(image_path):
+        continue
 
-        return detections, prediction_dict, tf.reshape(shapes, [-1])
+    image_np = load_image_into_numpy_array(image_path)
+    input_tensor = np.expand_dims(image_np, 0)
+    detections = detect_fn(input_tensor)
 
-    return detect_fn
+    # All outputs are batches tensors.
+    # Convert to numpy arrays, and take index [0] to remove the batch dimension.
+    # We're only interested in the first num_detections.
+    num_detections = int(detections.pop('num_detections'))
+    detections = {key: value[0, :num_detections].numpy()
+                  for key, value in detections.items()}
+    detections['num_detections'] = num_detections
+    # detection_classes should be ints.
+    detections['detection_classes'] = detections['detection_classes'].astype(
+        np.int32)
 
+    classes = detections['detection_classes']
+    scores = detections['detection_scores']
+    boxes = detections['detection_boxes']
+    anchors = detections['detection_anchor_indices']
 
-detect_fn = get_model_detection_function(detection_model)
+    # get the first 4 detected classes and order them by x coordinate
+    classes = classes[:4]
+    anchors = anchors[:4]
+    # sort the classes based on anchors and get the labels
+    labels = [category_index[c]['name']
+              for _, c in sorted(zip(anchors, classes))]
+    print(''.join(labels))
 
+    # plt.rcParams['figure.figsize'] = [42, 21]
+    # label_id_offset = 1
+    # image_np_with_detections = image_np.copy()
+    # viz_utils.visualize_boxes_and_labels_on_image_array(
+    #     image_np_with_detections,
+    #     detections['detection_boxes'],
+    #     classes + label_id_offset,
+    #     scores,
+    #     category_index,
+    #     use_normalized_coordinates=True,
+    #     max_boxes_to_draw=200,
+    #     min_score_thresh=.40,
+    #     agnostic_mode=False)
 
-image_dir = 'test_images/'
-image_path = os.path.join(image_dir, 'image.png')
-image_np = load_image_into_numpy_array(image_path)
-
-input_tensor = tf.convert_to_tensor(
-    np.expand_dims(image_np, 0), dtype=tf.float32)
-detections, predictions_dict, shapes = detect_fn(input_tensor)
-
-label_id_offset = 1
-image_np_with_detections = image_np.copy()
-
-
-# Use keypoints if available in detections
-keypoints, keypoint_scores = None, None
-if 'detection_keypoints' in detections:
-    keypoints = detections['detection_keypoints'][0].numpy()
-    keypoint_scores = detections['detection_keypoint_scores'][0].numpy()
-
-viz_utils.visualize_boxes_and_labels_on_image_array(
-    image_np_with_detections,
-    detections['detection_boxes'][0].numpy(),
-    (detections['detection_classes'][0].numpy() + label_id_offset).astype(int),
-    detections['detection_scores'][0].numpy(),
-    category_index,
-    use_normalized_coordinates=True,
-    max_boxes_to_draw=200,
-    min_score_thresh=.30,
-    agnostic_mode=False,
-    keypoints=keypoints,
-    keypoint_scores=keypoint_scores,
-    # keypoint_edges=get_keypoint_tuples(configs['eval_config'])
-)
-
-plt.figure(figsize=(12, 16))
-plt.imshow(image_np_with_detections)
-plt.show()
+    # # plt.subplot(2, 1, i+1)
+    # plt.figure()
+    # plt.imshow(image_np_with_detections)
+    # # plt.show()  ## UserWarning: Matplotlib is currently using agg, which is a non-GUI backend, so cannot show the figure.
+    # detected_img_path = os.path.join(
+    #     output_dir, filename)
+    # plt.savefig(detected_img_path)
