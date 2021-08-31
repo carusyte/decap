@@ -1,2 +1,0 @@
-model_checkpoint_path: "ctl_step_50000.ckpt-501"
-all_model_checkpoint_paths: "ctl_step_50000.ckpt-501"

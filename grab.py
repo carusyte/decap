@@ -8,7 +8,7 @@ from time import strftime
 
 # Set up the image URL and other constants
 image_url = "https://fc.sseinfo.com/Captcha"
-total = 200
+total = 100
 interval = 0.5  # sec
 folder = "raw_images"
 img_format = "png"

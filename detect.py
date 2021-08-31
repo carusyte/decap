@@ -1,4 +1,5 @@
 import os
+import csv
 import pathlib
 
 import numpy as np
@@ -8,7 +9,7 @@ from six import BytesIO
 
 saved_model = 'ssd_mobilenet_v2_fpnlite/model/saved/saved_model'
 image_dir = 'test_images'
-output_dir = 'detected_images'
+output_dir = 'output'
 
 
 def load_image_into_numpy_array(path):
@@ -70,8 +71,11 @@ category_index = {
     36: {'id': 36, 'name': '9'},
 }
 
+
 tf.keras.backend.clear_session()
 detect_fn = tf.saved_model.load(saved_model)
+
+answers = []
 
 for filename in os.listdir(image_dir):
     file_ext = pathlib.Path(filename).suffix
@@ -100,15 +104,21 @@ for filename in os.listdir(image_dir):
     classes = detections['detection_classes']
     scores = detections['detection_scores']
     boxes = detections['detection_boxes']
-    anchors = detections['detection_anchor_indices']
+    # anchors = detections['detection_anchor_indices']
 
     # get the first 4 detected classes and order them by x coordinate
     classes = classes[:4]
-    anchors = anchors[:4]
-    # sort the classes based on anchors and get the labels
+    xmins = boxes[:4][:, 1]
+    # sort the classes based on xmin and get the labels
     labels = [category_index[c]['name']
-              for _, c in sorted(zip(anchors, classes))]
-    print(''.join(labels))
+              for _, c in sorted(zip(xmins, classes))]
+
+    answers.append({
+        'file': filename,
+        'labels': ''.join(labels),
+    })
+
+    # print(''.join(labels))
 
     # plt.rcParams['figure.figsize'] = [42, 21]
     # label_id_offset = 1
@@ -131,3 +141,10 @@ for filename in os.listdir(image_dir):
     # detected_img_path = os.path.join(
     #     output_dir, filename)
     # plt.savefig(detected_img_path)
+
+answers = sorted(answers, key=lambda kv: kv['file'])
+keys = answers[0].keys()
+with open(os.path.join(output_dir, 'answers.csv'), 'w', newline='') as output_file:
+    dict_writer = csv.DictWriter(output_file, keys)
+    dict_writer.writeheader()
+    dict_writer.writerows(answers)
