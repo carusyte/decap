@@ -7,8 +7,8 @@ import tensorflow as tf
 from PIL import Image
 from six import BytesIO
 
-saved_model = 'ssd_mobilenet_v2_fpnlite/model/saved/saved_model'
-image_dir = 'test_images'
+saved_model = 'model/ssd_mobilenet_v2_fpnlite/model/saved/saved_model'
+image_dir = '/Users/jx/MTC/技术小组/test'
 output_dir = 'output'
 
 
