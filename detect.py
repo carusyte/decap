@@ -8,7 +8,8 @@ from PIL import Image
 from six import BytesIO
 
 saved_model = 'model/ssd_mobilenet_v2_fpnlite/model/saved/saved_model'
-image_dir = '/Users/jx/MTC/技术小组/test'
+# image_dir = '/Users/jx/MTC/技术小组/test'
+image_dir = '/Users/jx/MTC/技术小组/debug'
 output_dir = 'output'
 
 
@@ -104,11 +105,30 @@ for filename in os.listdir(image_dir):
     classes = detections['detection_classes']
     scores = detections['detection_scores']
     boxes = detections['detection_boxes']
-    # anchors = detections['detection_anchor_indices']
 
-    # get the first 4 detected classes and order them by x coordinate
-    classes = classes[:4]
-    xmins = boxes[:4][:, 1]
+    # extract x from top 30
+    xminsTopK = boxes[:30][:, 1]
+    prevs = []
+    index = []
+    xmins = []
+    for i, x in enumerate(xminsTopK):
+        proc = True
+        for px in prevs:
+            if abs(x-px) <= 0.15:
+                # overlapped to some degree, skip this one
+                proc = False
+                break
+        if not proc:
+            continue
+        index.append(i)
+        prevs.append(x)
+        xmins.append(x)
+        if len(xmins) >= 4:
+            break
+
+    # get the 4 detected classes with highest scores and order them by x coordinate
+    classes = [classes[i] for i in index]
+
     # sort the classes based on xmin and get the labels
     labels = [category_index[c]['name']
               for _, c in sorted(zip(xmins, classes))]
